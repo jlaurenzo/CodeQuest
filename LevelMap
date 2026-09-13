@@ -1,0 +1,209 @@
+import React, { useState } from 'react';
+
+const levels = [
+  { id: 1, label: 'Level 1', type: 'active', x: 28, y: 12, file: '/placeholder' },
+  { id: 2, label: 'Level 2', type: 'locked', x: 65, y: 31, file: '/placeholder' },
+  { id: 3, label: 'Level 3', type: 'locked', x: 25, y: 50, file: '/placeholder' },
+  { id: 4, label: 'Level 4', type: 'locked', x: 68, y: 62, file: '/placeholder' },
+  { id: 5, label: 'Level 5', type: 'locked', x: 27, y: 80, file: '/placeholder' },
+  { id: 6, label: 'Trophy', type: 'trophy', x: 74, y: 92, file: '/placeholder' }
+];//papalitan yung "/placeholder" with path nung level
+
+export default function App() {
+  const [currentLevelId, setCurrentLevelId] = useState(1);
+  const [unlockedLevels, setUnlockedLevels] = useState([1]);
+  const [hoveredButton, setHoveredButton] = useState(null);
+
+  const handleUnlockNext = () => {
+    const nextId = currentLevelId + 1;
+    if (nextId <= levels.length) {
+      setCurrentLevelId(nextId);
+      if (!unlockedLevels.includes(nextId)) {
+        setUnlockedLevels([...unlockedLevels, nextId]);
+      }
+    } else {
+      setCurrentLevelId(1);
+      setUnlockedLevels([1]);
+    }
+  };
+
+  return (
+    <div style={styles.container}>
+      <svg style={styles.svgOverlay} viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path 
+          d="M 28,12 Q 48,15 65,31 T 25,50 Q 50,55 68,62 T 27,80 Q 52,87 74,92"
+          fill="none" 
+          stroke="#c084fc" 
+          strokeWidth="1.2" 
+          strokeDasharray="2,2" 
+        />
+      </svg>
+
+      <img src="https://i.imgur.com/sF1rd5s.png"
+           alt="cloud"
+           style={{ ...styles.decoIcon, left: '60%', top: '9%', width: '105px', height: 'auto'}}></img>
+      <img src="https://i.imgur.com/YPUAaYy.png"
+           alt="code"
+           style={{ ...styles.decoIcon, left: '12%', top: '24%', color: '#f3e8ff', width: '100px', height: 'auto', opacity: 0.35 }}></img>
+      <img src="https://i.imgur.com/8duz86x.png"
+           alt="program"
+           style={{ ...styles.decoIcon, left: '64%', top: '44%', width: '120px', height: 'auto', opacity: 0.4 }}></img>
+      <img src="https://i.imgur.com/lHqmmiH.png"
+            alt="computer"
+            style={{ ...styles.decoIcon, left: '7%', top: '58%', width: '120px', height: 'auto', opacity: 0.3}}></img>
+
+      {levels.map((level) => {
+        const isActive = currentLevelId === level.id;
+        const isUnlocked = unlockedLevels.includes(level.id);
+        const isHovered = hoveredButton === level.id;
+
+        let btnBg = '#e5e7eb';
+        let emoji = '🔒';
+          if (level.type === 'trophy') {
+            btnBg = '#eab308';
+            emoji = '🏆';
+        } else if (isUnlocked) {
+            btnBg = '#a855f7';
+            emoji = '⭐';
+        }
+
+        return (
+          <div 
+            key={level.id}
+            style={{
+              ...styles.nodeWrapper,
+              left: `${level.x}%`,
+              top: `${level.y}%`,
+            }}
+          >
+            {isActive && (
+              <>
+                <div style={styles.glowOuter}></div>
+                <div style={styles.glowInner}></div>
+                <div style={styles.startBadge}>START</div>
+              </>
+            )}
+
+            <button
+              style={{
+                ...styles.levelBtn,
+                backgroundColor: btnBg,
+                transform: isHovered ? 'scale(1.15)' : 'scale(1)',
+                boxShadow: isActive ? '0px 0px 18px rgba(255,255,255,0.8)' : '0px 4px 0px #9ca3af'
+              }}
+              onMouseEnter={() => setHoveredButton(level.id)}
+              onMouseLeave={() => setHoveredButton(null)}
+              onClick={() => {
+                if (isUnlocked) {
+                  window.open(level.link);
+                } else {
+                  alert('Finish previous stage to unlock');
+                }
+              }}
+            >
+              {emoji}
+            </button>
+          </div>
+        );
+      })}
+
+      <button onClick={handleUnlockNext} style={styles.controlBtn}>
+        Test
+      </button>
+    </div>
+  );//patanggal nalang pag napalitan placeholder
+}
+
+const styles = {
+  container: {
+    backgroundColor: '#3b0764',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    minHeight: '100vh',
+    position: 'relative',
+    overflow: 'hidden',
+    padding: '24px 0'
+  },
+  svgOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none'
+  },
+  decoIcon: {
+    position: 'absolute',
+    opacity: 0.7,
+  },
+  nodeWrapper: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  levelBtn: {
+    width: '54px',
+    height: '54px',
+    borderRadius: '50%',
+    border: '4px solid #ffffff',
+    cursor: 'pointer',
+    fontSize: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'transform 0.15s ease-out',
+    zIndex: 2,
+    position: 'relative'
+  },
+  glowInner: {
+    position: 'absolute',
+    width: '74px',
+    height: '74px',
+    borderRadius: '50%',
+    border: '3px solid #f3e8ff',
+    backgroundColor: 'transparent',
+    opacity: 0.8,
+    zIndex: 1
+  },
+  glowOuter: {
+    position: 'absolute',
+    width: '88px',
+    height: '88px',
+    borderRadius: '50%',
+    border: '2.5px dashed rgba(243,232,255,0.5)',
+    backgroundColor: 'transparent',
+    zIndex: 0
+  },
+  startBadge: {
+    position: 'absolute',
+    top: '-32px',
+    backgroundColor: '#ffffff',
+    color: '#7e22ce',
+    fontWeight: '900',
+    fontSize: '11px',
+    padding: '4px 10px',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+    zIndex: 3,
+    letterSpacing: '0.4px',
+    whiteSpace: 'nowrap'
+  },
+  controlBtn: {
+    position: 'absolute',
+    bottom: '24px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#ffffff',
+    color: '#3b0764',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '24px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    transition: 'opacity 0.2s',
+    zIndex: 10
+  }
+};
