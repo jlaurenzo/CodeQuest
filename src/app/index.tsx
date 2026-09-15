@@ -1,98 +1,112 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useEffect } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+function Streak() {
+  const [streak, setStreak] = useState(0);
+  const [lastCompletedDate, setLastCompleteDate] = useState(null);
+  const [streakFreeze, setStreakFreeze] = useState(0);
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
+  useEffect(() => {
+    loadStreak();
+  }, []);
+
+  async function loadStreak() {
+    const savedStreak = await AsyncStorage.getItem("streak");
+    const savedDate = await AsyncStorage.getItem("lastCompletedDate");
+    const savedFreeze = await AsyncStorage.getItem("streakFreeze");
+
+    setStreak(savedStreak ? Number(savedStreak) : 0);
+    setLastCompleteDate(savedDate);
+    setStreakFreeze(savedFreeze ? Number(savedFreeze) : 0);
   }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
+
+  async function completeLesson() {
+    const today = new Date().toDateString();
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = yesterday.toDateString();
+
+    console.log("Today:", today);
+    console.log("Last Completed:", lastCompletedDate);
+    console.log("Yesterday:", yesterdayDate);
+
+    if (lastCompletedDate === today) {
+      return;
+    }
+
+    let newStreak = 0;
+    let newFreeze = streakFreeze;
+
+    if (lastCompletedDate === yesterdayDate) {
+      newStreak = streak + 1;
+
+      if (newStreak % 7 === 0) {
+        newFreeze = streakFreeze + 1;
+      }
+    } else {
+      if (streakFreeze > 0) {
+        newStreak = streak;
+        newFreeze = streakFreeze - 1;
+      } else {
+        newStreak = 1;
+      }
+    }
+
+    setStreak(newStreak);
+    setStreakFreeze(newFreeze);
+    setLastCompleteDate(today);
+
+    await AsyncStorage.setItem("streak", String(newStreak));
+    await AsyncStorage.setItem("lastCompletedDate", today);
+    await AsyncStorage.setItem("streakFreeze", String(newFreeze));
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <View style={styles.container}>
+      <Text style={styles.streak}>🔥 {streak} Day Streak</Text>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+      <Text style={styles.freeze}>❄️ Streak Freeze: {streakFreeze}</Text>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      <Pressable style={styles.button} onPress={completeLesson}>
+        <Text style={styles.buttonText}>Complete Lesson</Text>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    paddingTop: 100,
+    backgroundColor: "white",
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+
+  streak: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "black",
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+
+  freeze: {
+    fontSize: 18,
+    marginTop: 15,
+    color: "black",
   },
-  title: {
-    textAlign: 'center',
+
+  button: {
+    marginTop: 25,
+    padding: 15,
+    backgroundColor: "purple",
+    borderRadius: 10,
   },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+
+  buttonText: {
+    color: "white",
+    fontSize: 16,
   },
 });
+
+export default Streak;
