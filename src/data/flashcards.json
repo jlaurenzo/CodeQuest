@@ -1,0 +1,77 @@
+{
+  "javascript": {
+    "title": "JavaScript",
+    "units": {
+      "unit-1": {
+        "title": "Fundamentals",
+        "modules": {
+          "module-1": {
+            "title": "Variables & Constants",
+            "levels": {
+              "level-1": {
+                "title": "Level 1",
+                "flashcards": [
+                  {
+                    "id": "1",
+                    "title": "Variable",
+                    "definition": "TESTESTESTST",
+                    "syntax": "let variableName = value;"
+                  },
+                  {
+                    "id": "2",
+                    "title": "Constant",
+                    "definition": "A constant is a named storage location whose value cannot be changed after it is set",
+                    "syntax": "const constantName = value;"
+                  }
+                ]
+              },
+              "level-2": {
+                "title": "Level 2",
+                "flashcards": [
+                  {
+                    "id": "1",
+                    "title": "Scope",
+                    "definition": "Scope determines where a variable can be accessed within your code",
+                    "syntax": "function example() {\n  let local = 1;\n}"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "python": {
+    "title": "Python",
+    "units": {
+      "unit-1": {
+        "title": "Fundamentals",
+        "modules": {
+          "module-1": {
+            "title": "Variables & Data Types",
+            "levels": {
+              "level-1": {
+                "title": "Level 1",
+                "flashcards": [
+                  {
+                    "id": "1",
+                    "title": "Variable",
+                    "definition": "A variable is a named storage location that holds a value",
+                    "syntax": "variable_name = value"
+                  },
+                  {
+                    "id": "2",
+                    "title": "List",
+                    "definition": "A list is an ordered, mutable collection of items",
+                    "syntax": "my_list = [1, 2, 3]"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
