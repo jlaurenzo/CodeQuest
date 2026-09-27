@@ -3,7 +3,7 @@ import { doc, getDoc, runTransaction, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 export const MAX_HEARTS = 5;
-export const HEART_REFILL_SECONDS = 5 * 60;
+export const HEART_REFILL_SECONDS = 30 * 60;
 
 function getUserRef() {
   const user = auth.currentUser;
