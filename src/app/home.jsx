@@ -1,8 +1,8 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,8 +24,9 @@ import { loadUserAttempt, loadWeeklyBoss } from "../services/weeklyBossService";
 import BottomNav from "../components/BottomNav";
 import FireActive from "../../assets/icons/fire-active.svg";
 import HeartIcon from "../../assets/icons/heart.svg";
+import femaleAvatar from "../../assets/icons/female-avatar.png";
+import maleAvatar from "../../assets/icons/male-avatar.png";
 import startYellow from "../../assets/icons/start-yellow.png";
-import profileIcon from "../../assets/images/profile-placeholder.png";
 import bossImage from "../../assets/images/bosses/boss-image.png";
 
 function getNextMonday() {
@@ -42,14 +43,21 @@ function formatDuration(totalSeconds) {
   return `${days}d, ${String(hours).padStart(2, "0")}h`;
 }
 
+function getLeagueName(xp) {
+  const leagueIndex = Math.min(Math.floor(Math.max(xp, 0) / 500), 3);
+  return ["Bronze", "Silver", "Gold", "Diamond"][leagueIndex];
+}
+
 export default function Home() {
   const router = useRouter();
 
   const [userName, setUserName] = useState("");
   const [username, setUsername] = useState("");
+  const [avatar, setAvatar] = useState("male");
   const [language, setLanguage] = useState("");
   const [hearts, setHearts] = useState(5);
   const [xp, setXp] = useState(0);
+  const [streak, setStreak] = useState(0);
   const [heartRefillSeconds, setHeartRefillSeconds] = useState(0);
   const [learningProgress, setLearningProgress] = useState({ completedUnits: 0, totalUnits: 0 });
   const [weeklyAttemptStatus, setWeeklyAttemptStatus] = useState(null);
@@ -61,6 +69,12 @@ export default function Home() {
     loadHearts();
     loadWeeklyStatus();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadHearts();
+    }, []),
+  );
 
   useEffect(() => {
     if (!weeklySeconds) return undefined;
@@ -116,6 +130,7 @@ export default function Home() {
       const progress = await loadUserProgress();
       setHearts(progress.hearts);
       setXp(progress.xp);
+      setStreak(progress.streak || 0);
       if (progress.heartRefillAt) {
         setHeartRefillSeconds(
           Math.max(0, Math.ceil((progress.heartRefillAt - Date.now()) / 1000)),
@@ -146,6 +161,7 @@ export default function Home() {
             data.email?.split("@")[0] ||
             "username",
         );
+        setAvatar(data.avatar === "female" ? "female" : "male");
         setLanguage(data.programmingLanguage || "Not selected");
         const progressLanguage = data.programmingLanguage || "JavaScript";
         const languageContent = learningContent[progressLanguage] || learningContent.JavaScript;
@@ -164,6 +180,10 @@ export default function Home() {
     weeklyAttemptStatus === "completed" || weeklyAttemptStatus === "failed"
       ? `Next challenge in ${formatDuration(weeklySeconds)}`
       : `Ends in ${formatDuration(weeklySeconds)}`;
+
+  const avatarIsFemale = avatar === "female";
+  const avatarImage = avatarIsFemale ? femaleAvatar : maleAvatar;
+  const avatarBackground = avatarIsFemale ? "#e3befa" : "#6EC1E9";
 
 
   const handleLogout = async () => { //Hindi na ginagamit
@@ -196,8 +216,8 @@ export default function Home() {
 
         <View style={styles.header}>
           <View style={styles.profileSummary}>
-            <View style={styles.avatarPlaceholder}>
-              <Image source={profileIcon} style={styles.avatarIcon} />
+            <View style={[styles.avatarPlaceholder, { backgroundColor: avatarBackground }]}>
+              <Image source={avatarImage} style={styles.avatarIcon} />
             </View>
 
             <View style={styles.profileText}>
@@ -206,10 +226,15 @@ export default function Home() {
             </View>
           </View>
 
-          <View style={styles.streakContainer}>
+          <Pressable
+            style={styles.streakContainer}
+            onPress={() => router.push("/streaksytem")}
+            accessibilityRole="button"
+            accessibilityLabel="View streak"
+          >
             <FireActive width={32} height={38} />
-            <Text style={styles.streakText}>7</Text>
-          </View>
+            <Text style={styles.streakText}>{streak}</Text>
+          </Pressable>
         </View>
 
         <View style={styles.statsRow}>
@@ -235,10 +260,15 @@ export default function Home() {
             </View>
           </View>
 
-          <View style={styles.statCard}>
+          <Pressable
+            style={styles.statCard}
+            onPress={() => router.push("/league")}
+            accessibilityRole="button"
+            accessibilityLabel="View league"
+          >
             <Text style={styles.statLabel}>League</Text>
-            <Text style={styles.statValue}>Silver II</Text>
-          </View>
+            <Text style={styles.statValue}>{getLeagueName(xp)}</Text>
+          </Pressable>
         </View>
 
         <View style={styles.content}>
@@ -345,7 +375,6 @@ const styles = StyleSheet.create({
   avatarIcon: {
     width: 50,
     height: 50,
-    tintColor: "#000000",
     resizeMode: "contain",
   },
   profileText: {

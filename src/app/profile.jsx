@@ -126,7 +126,7 @@ export default function ProfileScreen() {
             accessibilityLabel="Log out"
           onPress={handleLogout}
           >
-            <Text style={styles.primaryButtonText}>LOG OUT</Text>
+            <Text style={styles.primaryButtonText}>LOGOUT</Text>
           </Pressable>
         </View>
       </View>

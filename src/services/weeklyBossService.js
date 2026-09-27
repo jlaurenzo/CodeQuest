@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 
 import { auth, db } from "./firebase";
+import { recordXpDate } from "./userProgressService";
 
 export const FALLBACK_BOSSES = {
   bugKing: {
@@ -192,6 +193,7 @@ export async function awardWeeklyBossXp(weekId, rewardXP) {
 
   const attemptRef = doc(db, "users", user.uid, "weeklyBoss", weekId);
   const userRef = doc(db, "users", user.uid);
+  let awarded = false;
 
   await runTransaction(db, async (transaction) => {
     const attemptSnapshot = await transaction.get(attemptRef);
@@ -208,5 +210,9 @@ export async function awardWeeklyBossXp(weekId, rewardXP) {
       { merge: true },
     );
     transaction.set(attemptRef, { xpAwarded: true }, { merge: true });
+    awarded = true;
   });
+
+  if (!awarded) return { firstXpToday: false };
+  return recordXpDate();
 }

@@ -144,7 +144,10 @@ export default function WeeklyBoss() {
     try {
       await saveUserAttempt(data.weekId, nextAttempt);
       if (nextStatus === "completed") {
-        await awardWeeklyBossXp(data.weekId, data.boss.rewardXP);
+        const xpResult = await awardWeeklyBossXp(data.weekId, data.boss.rewardXP);
+        if (xpResult?.firstXpToday) {
+          router.push("/streaksytem");
+        }
       }
     } catch (error) {
       Alert.alert("Save failed", "Your answer could not be saved.");

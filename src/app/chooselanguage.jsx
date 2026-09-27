@@ -75,10 +75,14 @@ export default function LanguageScreen() {
     try {
       setLoading(true);
 
+      const selectedLanguageData = languages.find(
+        (language) => language.id === selectedLanguage,
+      );
+
       await setDoc(
         doc(db, "users", user.uid),
         {
-          programmingLanguage: selectedLanguage,
+          programmingLanguage: selectedLanguageData.name,
           email: user.email,
           updatedAt: new Date(),
         },

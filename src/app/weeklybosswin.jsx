@@ -38,7 +38,10 @@ export default function WeeklyBossWin() {
         const userAttempt = await loadUserAttempt(weeklyData.weekId);
         setAttempt(userAttempt);
         if (userAttempt?.status === "completed") {
-          await awardWeeklyBossXp(weeklyData.weekId, weeklyData.boss.rewardXP);
+          const xpResult = await awardWeeklyBossXp(weeklyData.weekId, weeklyData.boss.rewardXP);
+          if (xpResult?.firstXpToday) {
+            router.replace("/streaksytem");
+          }
         }
       } catch (error) {
         Alert.alert("Error", "Could not load the victory information.");

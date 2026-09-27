@@ -297,8 +297,11 @@ export default function App() {
       const oldXPStr = await AsyncStorage.getItem("xp");
       const oldXP = Number(oldXPStr) || 0;
       await AsyncStorage.setItem("xp", String(oldXP + 20));
-      await addUserXp(20);
       await markLevelComplete(language, unit, moduleId, level);
+      const xpResult = await addUserXp(20);
+      if (xpResult?.firstXpToday) {
+        router.push("/streaksytem");
+      }
       return;
     }
 

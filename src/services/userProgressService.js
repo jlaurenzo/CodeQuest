@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, runTransaction, setDoc } from "firebase/firestore";
 
 import { auth, db } from "./firebase";
 
@@ -19,9 +19,48 @@ function getRefillTime(value) {
   return Number.isNaN(time) ? null : time;
 }
 
+function getDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getYesterdayKey() {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return getDateKey(yesterday);
+}
+
+function getStreakFields(data, today, yesterday) {
+  const previousStreak = typeof data.streak === "number" ? data.streak : 0;
+  const previousDate = data.lastXpDate || null;
+  const previousDates = Array.isArray(data.streakDates) ? data.streakDates : [];
+  const alreadyCountedToday = previousDate === today;
+  const streak = alreadyCountedToday
+    ? previousStreak
+    : previousDate === yesterday
+      ? previousStreak + 1
+      : 1;
+  const streakDates = alreadyCountedToday
+    ? previousDates
+    : [...new Set([...previousDates, today])].slice(-7);
+
+  return { streak, lastXpDate: today, streakDates };
+}
+
 export async function loadUserProgress() {
   const userRef = getUserRef();
-  if (!userRef) return { xp: 0, hearts: MAX_HEARTS, heartRefillAt: null };
+  if (!userRef) {
+    return {
+      xp: 0,
+      hearts: MAX_HEARTS,
+      heartRefillAt: null,
+      streak: 0,
+      lastXpDate: null,
+      streakDates: [],
+    };
+  }
 
   const snapshot = await getDoc(userRef);
   const data = snapshot.exists() ? snapshot.data() : {};
@@ -29,13 +68,21 @@ export async function loadUserProgress() {
   let heartRefillAt = getRefillTime(data.heartRefillAt);
   const now = Date.now();
 
-  if (typeof data.xp !== "number" || typeof data.hearts !== "number") {
+  if (
+    typeof data.xp !== "number" ||
+    typeof data.hearts !== "number" ||
+    typeof data.streak !== "number" ||
+    !Array.isArray(data.streakDates)
+  ) {
     await setDoc(
       userRef,
       {
         xp: typeof data.xp === "number" ? data.xp : 0,
         hearts,
         heartRefillAt,
+        streak: typeof data.streak === "number" ? data.streak : 0,
+        lastXpDate: data.lastXpDate || null,
+        streakDates: Array.isArray(data.streakDates) ? data.streakDates : [],
       },
       { merge: true },
     );
@@ -59,6 +106,9 @@ export async function loadUserProgress() {
     xp: typeof data.xp === "number" ? data.xp : 0,
     hearts,
     heartRefillAt,
+    streak: typeof data.streak === "number" ? data.streak : 0,
+    lastXpDate: data.lastXpDate || null,
+    streakDates: Array.isArray(data.streakDates) ? data.streakDates : [],
   };
 }
 
@@ -71,12 +121,48 @@ export async function saveHearts(hearts, heartRefillAt = null) {
 
 export async function addUserXp(amount) {
   const userRef = getUserRef();
-  if (!userRef) return;
+  if (!userRef) return { firstXpToday: false };
 
-  const snapshot = await getDoc(userRef);
-  const currentXp = snapshot.exists() && typeof snapshot.data().xp === "number"
-    ? snapshot.data().xp
-    : 0;
+  const today = getDateKey();
+  const yesterday = getYesterdayKey();
+  let firstXpToday = false;
 
-  await setDoc(userRef, { xp: currentXp + amount }, { merge: true });
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(userRef);
+    const data = snapshot.exists() ? snapshot.data() : {};
+    const currentXp = typeof data.xp === "number" ? data.xp : 0;
+    firstXpToday = data.lastXpDate !== today;
+    const streakFields = getStreakFields(data, today, yesterday);
+
+    transaction.set(
+      userRef,
+      {
+        xp: currentXp + amount,
+        ...streakFields,
+      },
+      { merge: true },
+    );
+  });
+
+  return { firstXpToday };
 }
+
+export async function recordXpDate() {
+  const userRef = getUserRef();
+  if (!userRef) return { firstXpToday: false };
+
+  const today = getDateKey();
+  const yesterday = getYesterdayKey();
+  let firstXpToday = false;
+
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(userRef);
+    const data = snapshot.exists() ? snapshot.data() : {};
+    firstXpToday = data.lastXpDate !== today;
+    transaction.set(userRef, getStreakFields(data, today, yesterday), { merge: true });
+  });
+
+  return { firstXpToday };
+}
+
+export { getDateKey };

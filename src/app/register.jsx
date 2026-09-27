@@ -71,6 +71,9 @@ export default function RegisterScreen() {
         xp: 0,
         hearts: 5,
         heartRefillAt: null,
+        streak: 0,
+        lastXpDate: null,
+        streakDates: [],
         createdAt: serverTimestamp(),
       });
 
